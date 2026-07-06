@@ -29,6 +29,8 @@
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0e1013">
 <script src="https://js.puter.com/v2/"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
 <style>
   :root{
     --bg:#0e1013;
@@ -53,7 +55,7 @@
   html,body{height:100%;overscroll-behavior:none;}
   body{
     background:var(--bg);color:var(--text);font-family:var(--font);
-    display:flex;height:100vh;overflow:hidden;font-size:15px;
+    display:flex;height:100vh;height:100dvh;overflow:hidden;font-size:15px;
   }
   button{font-family:inherit;cursor:pointer;background:none;border:none;color:inherit;}
   svg{display:block;flex-shrink:0;}
@@ -248,6 +250,49 @@
   }
   #overlay-scrim.show{display:block;}
 
+  /* ===== SPLASH ===== */
+  #splash{
+    position:fixed;inset:0;background:var(--bg);z-index:100;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;
+    transition:opacity 0.4s ease;
+  }
+  #splash.hide{opacity:0;pointer-events:none;}
+  #splash .splash-logo{
+    width:60px;height:60px;border-radius:16px;background:var(--accent-soft);
+    display:flex;align-items:center;justify-content:center;color:var(--accent);
+    animation:splashPulse 1.15s ease-in-out infinite;
+  }
+  #splash .splash-name{font-size:15px;font-weight:600;color:var(--text-dim);letter-spacing:0.3px;}
+  @keyframes splashPulse{
+    0%,100%{transform:scale(1);opacity:1;}
+    50%{transform:scale(1.1);opacity:0.7;}
+  }
+
+  /* ===== EMAIL GATE ===== */
+  #emailGate{
+    position:fixed;inset:0;background:var(--bg);z-index:90;
+    display:none;flex-direction:column;align-items:center;justify-content:center;
+    padding:24px;text-align:center;gap:14px;
+  }
+  #emailGate.show{display:flex;}
+  #emailGate .mark{
+    width:52px;height:52px;border-radius:14px;background:var(--accent-soft);
+    display:flex;align-items:center;justify-content:center;color:var(--accent);margin-bottom:6px;
+  }
+  #emailGate h2{font-size:19px;font-weight:600;}
+  #emailGate p{color:var(--text-dim);font-size:13.5px;max-width:300px;line-height:1.5;}
+  #emailGate input{
+    width:100%;max-width:300px;background:var(--panel);border:1px solid var(--border);color:var(--text);
+    padding:12px 14px;border-radius:11px;font-size:14.5px;text-align:center;
+  }
+  #emailGate input:focus{outline:none;border-color:var(--accent);}
+  #emailGate button{
+    width:100%;max-width:300px;background:var(--accent);color:#fff;padding:12px;
+    border-radius:11px;font-weight:600;font-size:14.5px;
+  }
+  #emailGate .gate-error{color:var(--danger);font-size:12.5px;display:none;}
+  #emailGate .gate-note{font-size:11.5px;color:var(--text-faint);max-width:300px;line-height:1.5;}
+
   @media(min-width:769px){
     #overlay-scrim{display:none !important;}
   }
@@ -260,7 +305,26 @@
 </head>
 <body>
 
+<div id="splash">
+  <div class="splash-logo">
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+  </div>
+  <div class="splash-name">Open Studio AI</div>
+</div>
+
 <div id="overlay-scrim"></div>
+
+<div id="emailGate">
+  <div class="mark">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m2 7 10 6 10-6"/></svg>
+  </div>
+  <h2>Welcome to Open Studio AI</h2>
+  <p>Enter your email to start chatting. Usage is completely free and unlimited.</p>
+  <input type="email" id="gateEmailInput" placeholder="you@example.com">
+  <div class="gate-error" id="gateError">Please enter a valid email address.</div>
+  <button id="gateSubmitBtn">Continue</button>
+  <div class="gate-note">By continuing, you agree that your email and conversations may be securely stored to help improve this service.</div>
+</div>
 
 <aside id="sidebar" class="hidden">
   <div class="sidebar-top">
@@ -284,7 +348,7 @@
     <button class="icon-btn" id="toggleSidebar">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/></svg>
     </button>
-    <div class="topbar-title">Open Studio AI<span class="model-tag" id="modelTag">GPT-4o mini</span></div>
+    <div class="topbar-title">Open Studio AI<span class="model-tag" id="modelTag">Fast</span></div>
     <button class="icon-btn" id="openSettingsTop">
       <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
     </button>
@@ -297,10 +361,6 @@
       </div>
       <h1 id="welcomeGreeting">Open Studio AI</h1>
       <p id="welcomeSub">Ask anything, generate images, or write content.</p>
-      <div class="name-prompt" id="namePrompt">
-        <input type="text" id="nameInput" placeholder="What should we call you?" maxlength="30">
-        <button id="saveNameBtn">Continue</button>
-      </div>
     </div>
   </div>
 
@@ -372,6 +432,102 @@
 </div>
 
 <script>
+// ================= VIEWPORT FIX (prevents composer being cut off on mobile) =================
+function setAppHeight(){
+  const h = (window.visualViewport ? window.visualViewport.height : window.innerHeight);
+  document.body.style.height = h + 'px';
+}
+setAppHeight();
+window.addEventListener('resize', setAppHeight);
+if(window.visualViewport){
+  window.visualViewport.addEventListener('resize', setAppHeight);
+}
+
+// ================= SPLASH SCREEN =================
+window.addEventListener('load', () => {
+  setTimeout(() => {
+    const splash = document.getElementById('splash');
+    splash.classList.add('hide');
+    setTimeout(() => splash.remove(), 450);
+  }, 700);
+});
+
+// ================= FIREBASE (data storage) =================
+// Replace with your own Firebase project config (see README for steps)
+const firebaseConfig = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_PROJECT.firebaseapp.com",
+  projectId: "YOUR_PROJECT_ID",
+  storageBucket: "YOUR_PROJECT.appspot.com",
+  messagingSenderId: "YOUR_SENDER_ID",
+  appId: "YOUR_APP_ID"
+};
+
+let db = null;
+try{
+  if(firebaseConfig.apiKey !== "YOUR_API_KEY"){
+    firebase.initializeApp(firebaseConfig);
+    db = firebase.firestore();
+  }
+}catch(e){ console.warn('Firebase not configured yet:', e); }
+
+let userEmail = localStorage.getItem('osa_user_email') || '';
+
+function logToCloud(role, content, type){
+  if(!db || !userEmail) return;
+  db.collection('messages').add({
+    email: userEmail,
+    sessionId: currentSessionId || 'unknown',
+    role: role,
+    content: content,
+    type: type,
+    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+  }).catch(e => console.warn('Log failed:', e));
+}
+
+// ================= EMAIL GATE =================
+const emailGate = document.getElementById('emailGate');
+const gateEmailInput = document.getElementById('gateEmailInput');
+const gateError = document.getElementById('gateError');
+
+function isValidEmail(v){
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+}
+
+function checkEmailGate(){
+  if(!userEmail){
+    emailGate.classList.add('show');
+  } else {
+    emailGate.classList.remove('show');
+  }
+}
+
+document.getElementById('gateSubmitBtn').onclick = () => {
+  const val = gateEmailInput.value.trim();
+  if(!isValidEmail(val)){
+    gateError.style.display = 'block';
+    return;
+  }
+  gateError.style.display = 'none';
+  userEmail = val;
+  localStorage.setItem('osa_user_email', val);
+  const derivedName = nameFromEmail(val);
+  if(derivedName) localStorage.setItem('osa_user_name', derivedName);
+  emailGate.classList.remove('show');
+  applyGreeting();
+  if(db){
+    db.collection('users').doc(val).set({
+      email: val,
+      name: derivedName,
+      lastSeen: firebase.firestore.FieldValue.serverTimestamp()
+    }, { merge: true }).catch(e => console.warn('User log failed:', e));
+  }
+};
+gateEmailInput.addEventListener('keydown', e => {
+  if(e.key === 'Enter') document.getElementById('gateSubmitBtn').click();
+});
+checkEmailGate();
+
 // ================= STATE =================
 let sessions = JSON.parse(localStorage.getItem('osa_sessions') || '[]');
 let currentSessionId = null;
@@ -504,6 +660,7 @@ function addMessageToSession(role, content, type='text'){
   }
   saveSessions();
   renderSessionList();
+  logToCloud(role, content, type);
 }
 
 // ================= SIDEBAR =================
@@ -532,29 +689,24 @@ document.getElementById('saveSettings').onclick = () => {
 // ================= USER NAME / GREETING =================
 const welcomeGreeting = document.getElementById('welcomeGreeting');
 const welcomeSub = document.getElementById('welcomeSub');
-const namePrompt = document.getElementById('namePrompt');
-const nameInput = document.getElementById('nameInput');
+
+function nameFromEmail(email){
+  const local = email.split('@')[0] || '';
+  const parts = local.split(/[._+\-]+/).filter(Boolean);
+  if(parts.length === 0) return '';
+  return parts.map(p => p.charAt(0).toUpperCase() + p.slice(1).toLowerCase()).join(' ');
+}
 
 function applyGreeting(){
-  const savedName = localStorage.getItem('osa_user_name');
-  if(savedName){
-    welcomeGreeting.textContent = 'Hi, ' + savedName;
+  const name = localStorage.getItem('osa_user_name') || '';
+  if(name){
+    welcomeGreeting.textContent = 'Hi, ' + name;
     welcomeSub.textContent = 'What would you like to do today?';
-    namePrompt.style.display = 'none';
   } else {
     welcomeGreeting.textContent = 'Open Studio AI';
     welcomeSub.textContent = 'Ask anything, generate images, or write content.';
-    namePrompt.style.display = 'flex';
   }
 }
-function saveName(){
-  const val = nameInput.value.trim();
-  if(!val) return;
-  localStorage.setItem('osa_user_name', val);
-  applyGreeting();
-}
-document.getElementById('saveNameBtn').onclick = saveName;
-nameInput.addEventListener('keydown', e => { if(e.key === 'Enter') saveName(); });
 applyGreeting();
 
 // ================= TEMPLATE MENU =================
@@ -672,11 +824,45 @@ async function handleSend(){
     }
 
     try{
-      const response = await puter.ai.chat(fullMessages, { model: 'gpt-5-nano' });
+      const response = await puter.ai.chat(fullMessages, { model: 'gpt-5.4-nano', stream: true });
       thinkingRow.remove();
-      const reply = extractReplyText(response);
-      renderMessage('ai', reply, 'text');
-      addMessageToSession('ai', reply, 'text');
+
+      const row = document.createElement('div');
+      row.className = 'msg-row ai';
+      const bubble = document.createElement('div');
+      bubble.className = 'msg-bubble';
+      row.appendChild(bubble);
+      chatScroll.appendChild(row);
+
+      let fullText = '';
+      for await (const part of response){
+        if(part && part.text){
+          fullText += part.text;
+          bubble.textContent = fullText;
+          chatScroll.scrollTop = chatScroll.scrollHeight;
+        }
+      }
+      if(!fullText){ fullText = 'No response received. Please try again.'; bubble.textContent = fullText; }
+
+      const actions = document.createElement('div');
+      actions.className = 'msg-actions';
+      actions.innerHTML = `
+        <button class="copy-btn" title="Copy">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        </button>
+        <button class="speak-btn" title="Read aloud">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+        </button>
+      `;
+      actions.querySelector('.copy-btn').onclick = () => navigator.clipboard.writeText(fullText);
+      actions.querySelector('.speak-btn').onclick = () => {
+        speechSynthesis.cancel();
+        speechSynthesis.speak(new SpeechSynthesisUtterance(fullText));
+      };
+      chatScroll.appendChild(actions);
+      chatScroll.scrollTop = chatScroll.scrollHeight;
+
+      addMessageToSession('ai', fullText, 'text');
     }catch(e){
       thinkingRow.remove();
       const msg = 'Something went wrong. ' + (e && e.message ? e.message : 'Please try again.');

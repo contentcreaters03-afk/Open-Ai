@@ -35,3 +35,40 @@ Jab pehli dafa koi message bhejoge, ho sakta hai ek chhota sign-in popup aaye ja
 - Streaming responses (word-by-word typing)
 - Export chat as PDF/text
 - Different AI models select karne ka option (settings mein)
+
+## Email + Chat Data Storage (Firebase Setup)
+
+Ab app users se email lekar unki chats cloud mein save karti hai, jo tu dekh sakta hai.
+
+### Step 1: Firebase project banayein
+1. https://console.firebase.google.com pe jayein, naya project banayein (free)
+2. Left menu se "Build > Firestore Database" > "Create database" > production mode > koi bhi region choose karein
+
+### Step 2: Web app config lena
+1. Project settings (gear icon) > "Your apps" > Web icon (`</>`) se naya web app add karein
+2. Jo config object milega (apiKey, projectId, waghera), usay copy karein
+
+### Step 3: index.html mein config daalein
+`index.html` mein `firebaseConfig` object dhoondein (search karein "YOUR_API_KEY") aur apni real values daal dein.
+
+### Step 4: Security Rules (zaroori — users ki privacy ke liye)
+Firestore > Rules mein ye paste karein, taake users sirf apna data likh sakein, kisi ki bhi chats padh na sakein (sirf tu Firebase Console se sab dekh sakega):
+
+```
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow create: if true;
+      allow read, update, delete: if false;
+    }
+  }
+}
+```
+
+### Data kahan dekhein
+Firebase Console > Firestore Database > "messages" aur "users" collections mein sab emails aur conversations dikhengi (chronological order mein, filter/search bhi kar sakte hain).
+
+### Important
+- Ye dusron ka personal data hai (email + private messages) — isay securely rakhein, kisi ke saath share na karein, aur agar app public karein to ek chhota Privacy Policy page bhi add karna legally zyada safe hoga
+- Firebase free tier mein 1GB storage aur 50k reads/day free hain — normal use ke liye kaafi hai
